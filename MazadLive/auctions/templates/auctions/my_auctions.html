@@ -1,0 +1,47 @@
+{% extends "auctions/base.html" %}
+{% block title %}My Listings — MazadLive{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h3 class="fw-bold mb-0"><i class="bi bi-shop"></i> My Listings</h3>
+  <a href="/auctions/create/" class="btn btn-warning fw-bold">
+    <i class="bi bi-plus-lg"></i> New Listing
+  </a>
+</div>
+
+{% if auctions %}
+<div class="table-responsive">
+  <table class="table table-hover align-middle bg-white shadow-sm rounded">
+    <thead class="table-dark">
+      <tr>
+        <th>Title</th>
+        <th>Category</th>
+        <th>Status</th>
+        <th>Current Price</th>
+        <th>Bids</th>
+        <th>Ends</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for auction in auctions %}
+      <tr>
+        <td><a href="/auctions/{{ auction.pk }}/" class="text-decoration-none fw-semibold">{{ auction.title|truncatechars:50 }}</a></td>
+        <td><small class="text-muted">{{ auction.category.name }}</small></td>
+        <td><span class="badge badge-{{ auction.status|lower }}">{{ auction.get_status_display }}</span></td>
+        <td class="fw-bold text-success">{{ auction.current_price }} MAD</td>
+        <td>{{ auction.bids.count }}</td>
+        <td><small>{{ auction.end_time|date:"M d, H:i" }}</small></td>
+        <td><a href="/auctions/{{ auction.pk }}/" class="btn btn-sm btn-outline-primary">View</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="text-center py-5 text-muted">
+  <i class="bi bi-shop display-3"></i>
+  <p class="mt-3">You haven't listed anything yet. <a href="/auctions/create/">Create your first listing</a></p>
+</div>
+{% endif %}
+{% endblock %}

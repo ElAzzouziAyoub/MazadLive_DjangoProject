@@ -1,0 +1,149 @@
+{% extends "auctions/base.html" %}
+{% block title %}{{ auction.title }} — MazadLive{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- Left: Auction info -->
+  <div class="col-lg-7">
+    <nav aria-label="breadcrumb" class="mb-3">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Auctions</a></li>
+        <li class="breadcrumb-item text-muted">{{ auction.category.name }}</li>
+        <li class="breadcrumb-item active">{{ auction.title|truncatechars:40 }}</li>
+      </ol>
+    </nav>
+
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <span class="badge badge-{{ auction.status|lower }} rounded-pill fs-6">{{ auction.get_status_display }}</span>
+          <small class="text-muted">Listed by <strong>{{ auction.seller.username }}</strong></small>
+        </div>
+        <h2 class="fw-bold">{{ auction.title }}</h2>
+        <p class="text-muted">{{ auction.description|default:"No description provided." }}</p>
+
+        <hr>
+        <div class="row text-center">
+          <div class="col">
+            <div class="text-muted small">Starting Price</div>
+            <div class="fw-bold">{{ auction.starting_price }} MAD</div>
+          </div>
+          <div class="col">
+            <div class="text-muted small">Current Price</div>
+            <div class="price-tag">{{ auction.current_price }} MAD</div>
+          </div>
+          <div class="col">
+            <div class="text-muted small">Total Bids</div>
+            <div class="fw-bold">{{ auction.bids.count }}</div>
+          </div>
+        </div>
+        <hr>
+        <div class="row text-center">
+          <div class="col">
+            <div class="text-muted small"><i class="bi bi-clock"></i> Starts</div>
+            <div class="small">{{ auction.start_time|date:"M d, Y H:i" }}</div>
+          </div>
+          <div class="col">
+            <div class="text-muted small"><i class="bi bi-alarm"></i> Ends</div>
+            <div class="small fw-bold text-danger">{{ auction.end_time|date:"M d, Y H:i" }}</div>
+          </div>
+        </div>
+
+        {% if auction.status == "CLOSED" and auction.winner %}
+        <div class="alert alert-success mt-3 mb-0">
+          <i class="bi bi-trophy-fill"></i> Won by <strong>{{ auction.winner.username }}</strong>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Bid History -->
+    <div class="card shadow-sm mt-4">
+      <div class="card-header fw-bold"><i class="bi bi-list-ul"></i> Bid History</div>
+      <ul class="list-group list-group-flush">
+        {% for bid in bids %}
+        <li class="list-group-item d-flex justify-content-between bid-row">
+          <span><i class="bi bi-person"></i> {{ bid.bidder.username }}</span>
+          <span>
+            <strong>{{ bid.amount }} MAD</strong>
+            {% if bid.is_auto_bid %}<span class="badge bg-secondary ms-1">auto</span>{% endif %}
+          </span>
+          <small class="text-muted">{{ bid.timestamp|date:"M d, H:i" }}</small>
+        </li>
+        {% empty %}
+        <li class="list-group-item text-muted text-center py-3">No bids yet. Be the first!</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <!-- Right: Bid form / watchlist -->
+  <div class="col-lg-5">
+    {% if auction.status == "LIVE" %}
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-bold"><i class="bi bi-hammer"></i> Place a Bid</div>
+      <div class="card-body">
+        {% if user.is_authenticated %}
+          {% if user == auction.seller %}
+            <p class="text-muted">You cannot bid on your own auction.</p>
+          {% else %}
+            <form method="post" action="/auctions/{{ auction.pk }}/bid/">
+              {% csrf_token %}
+              <div class="mb-3">
+                <label class="form-label">Your Bid (MAD)</label>
+                <div class="input-group">
+                  <input type="number" name="amount" class="form-control form-control-lg"
+                    step="0.01" min="{{ auction.current_price|floatformat:2 }}"
+                    placeholder="Min: {{ auction.current_price }} MAD" required>
+                  <span class="input-group-text">MAD</span>
+                </div>
+                <div class="form-text">Must be higher than {{ auction.current_price }} MAD</div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Auto-Bid Max (optional)</label>
+                <div class="input-group">
+                  <input type="number" name="auto_bid_max" class="form-control"
+                    step="0.01" placeholder="Set auto-bid ceiling">
+                  <span class="input-group-text">MAD</span>
+                </div>
+                <div class="form-text">System will auto-bid up to this amount.</div>
+              </div>
+              <button class="btn btn-success w-100 fw-bold" type="submit">
+                <i class="bi bi-hammer"></i> Place Bid
+              </button>
+            </form>
+          {% endif %}
+        {% else %}
+          <p class="text-muted">You must be logged in to place a bid.</p>
+          <a href="/login/?next=/auctions/{{ auction.pk }}/" class="btn btn-primary w-100">Login to Bid</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Watchlist toggle -->
+    {% if user.is_authenticated and user != auction.seller %}
+    <div class="card shadow-sm">
+      <div class="card-body text-center">
+        {% if in_watchlist %}
+          <form method="post" action="/watchlist/remove/{{ watchlist_id }}/">
+            {% csrf_token %}
+            <button class="btn btn-outline-danger w-100">
+              <i class="bi bi-bookmark-x"></i> Remove from Watchlist
+            </button>
+          </form>
+        {% else %}
+          <form method="post" action="/watchlist/add/">
+            {% csrf_token %}
+            <input type="hidden" name="auction_id" value="{{ auction.pk }}">
+            <button class="btn btn-outline-primary w-100">
+              <i class="bi bi-bookmark-plus"></i> Add to Watchlist
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "auctions/base.html" %}
+{% block title %}My Watchlist — MazadLive{% endblock %}
+
+{% block content %}
+<h3 class="fw-bold mb-4"><i class="bi bi-bookmark"></i> My Watchlist</h3>
+
+{% if items %}
+<div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4">
+  {% for item in items %}
+  <div class="col">
+    <div class="card h-100 auction-card shadow-sm">
+      <div class="card-body">
+        <div class="d-flex justify-content-between mb-2">
+          <span class="badge badge-{{ item.auction.status|lower }} rounded-pill">{{ item.auction.get_status_display }}</span>
+          <small class="text-muted">{{ item.auction.category.name }}</small>
+        </div>
+        <h5 class="card-title">
+          <a href="/auctions/{{ item.auction.pk }}/" class="text-decoration-none text-dark stretched-link">
+            {{ item.auction.title }}
+          </a>
+        </h5>
+        <div class="price-tag">{{ item.auction.current_price }} MAD</div>
+      </div>
+      <div class="card-footer bg-transparent d-flex justify-content-between">
+        <small class="text-muted">Ends {{ item.auction.end_time|date:"M d, H:i" }}</small>
+        <form method="post" action="/watchlist/remove/{{ item.pk }}/" class="position-relative" style="z-index:2;">
+          {% csrf_token %}
+          <button class="btn btn-sm btn-outline-danger" title="Remove">
+            <i class="bi bi-trash"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5 text-muted">
+  <i class="bi bi-bookmark display-3"></i>
+  <p class="mt-3">Your watchlist is empty. <a href="/">Browse auctions</a></p>
+</div>
+{% endif %}
+{% endblock %}

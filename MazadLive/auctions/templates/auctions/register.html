@@ -1,0 +1,43 @@
+{% extends "auctions/base.html" %}
+{% block title %}Register — MazadLive{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-sm-8 col-md-5">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <h3 class="fw-bold mb-4 text-center">Create Account</h3>
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label">Username</label>
+            <input type="text" name="username" class="form-control" required autofocus>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email <span class="text-muted">(optional)</span></label>
+            <input type="email" name="email" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input type="password" name="password1" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Confirm Password</label>
+            <input type="password" name="password2" class="form-control" required>
+          </div>
+          {% if form.errors %}
+          <div class="alert alert-danger py-2">
+            {% for field, errors in form.errors.items %}
+              {% for error in errors %}{{ error }}<br>{% endfor %}
+            {% endfor %}
+          </div>
+          {% endif %}
+          <button class="btn btn-warning w-100 fw-bold" type="submit">Create Account</button>
+        </form>
+        <hr>
+        <p class="text-center mb-0">Already have an account? <a href="/login/">Login</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
