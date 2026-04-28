@@ -13,10 +13,35 @@ from django.views.decorators.http import require_POST
 from .models import Auction, Bid, Category, Watchlist
 
 
+def _make_aware(dt):
+    """Return a timezone-aware datetime; no-op if already aware or None."""
+    if dt is None:
+        return None
+    if timezone.is_naive(dt):
+        return timezone.make_aware(dt)
+    return dt
+
+
+def refresh_auction_statuses():
+    """Promote SCHEDULED→LIVE and close LIVE→CLOSED based on current time."""
+    now = timezone.now()
+    Auction.objects.filter(
+        status=Auction.STATUS_SCHEDULED,
+        start_time__lte=now,
+    ).update(status=Auction.STATUS_LIVE)
+
+    for auction in Auction.objects.filter(status=Auction.STATUS_LIVE, end_time__lte=now):
+        top_bid = auction.bids.order_by('-amount').first()
+        auction.status = Auction.STATUS_CLOSED
+        auction.winner = top_bid.bidder if top_bid else None
+        auction.save(update_fields=['status', 'winner', 'updated_at'])
+
+
 def home(request):
+    refresh_auction_statuses()
     qs = Auction.objects.select_related('seller', 'category').annotate(bid_count=Count('bids'))
 
-    status_filter = request.GET.get('status', 'LIVE').upper()
+    status_filter = request.GET.get('status', '').upper()
     category_slug = request.GET.get('category', '')
     query = request.GET.get('q', '')
 
@@ -40,6 +65,7 @@ def home(request):
 
 
 def auction_detail(request, pk):
+    refresh_auction_statuses()
     auction = get_object_or_404(
         Auction.objects.select_related('seller', 'category', 'winner'),
         pk=pk,
@@ -138,8 +164,8 @@ def create_auction(request):
             except InvalidOperation:
                 errors.append('Invalid reserve price.')
 
-        start_time = parse_datetime(start_time_raw) if start_time_raw else None
-        end_time = parse_datetime(end_time_raw) if end_time_raw else None
+        start_time = _make_aware(parse_datetime(start_time_raw)) if start_time_raw else None
+        end_time = _make_aware(parse_datetime(end_time_raw)) if end_time_raw else None
 
         if not start_time:
             errors.append('Start time is required.')
@@ -205,6 +231,7 @@ def watchlist_remove(request, pk):
 
 @login_required
 def my_auctions(request):
+    refresh_auction_statuses()
     auctions = Auction.objects.filter(seller=request.user).select_related('category').annotate(bid_count=Count('bids'))
     return render(request, 'auctions/my_auctions.html', {'auctions': auctions})
 

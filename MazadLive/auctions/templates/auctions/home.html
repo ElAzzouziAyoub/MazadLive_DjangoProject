@@ -32,7 +32,8 @@
   </div>
   <div class="col-sm-2">
     <select name="status" class="form-select">
-      <option value="LIVE" {% if request.GET.status == "LIVE" or not request.GET.status %}selected{% endif %}>Live</option>
+      <option value="" {% if not request.GET.status %}selected{% endif %}>All Statuses</option>
+      <option value="LIVE" {% if request.GET.status == "LIVE" %}selected{% endif %}>Live</option>
       <option value="SCHEDULED" {% if request.GET.status == "SCHEDULED" %}selected{% endif %}>Scheduled</option>
       <option value="CLOSED" {% if request.GET.status == "CLOSED" %}selected{% endif %}>Closed</option>
     </select>

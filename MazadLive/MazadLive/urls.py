@@ -28,9 +28,9 @@ urlpatterns = [
 
     # Frontend
     path('', tv.home, name='home'),
+    path('auctions/create/', tv.create_auction, name='create_auction'),
     path('auctions/<int:pk>/', tv.auction_detail, name='auction_detail'),
     path('auctions/<int:pk>/bid/', tv.place_bid, name='place_bid'),
-    path('auctions/create/', tv.create_auction, name='create_auction'),
 
     path('watchlist/', tv.watchlist_view, name='watchlist'),
     path('watchlist/add/', tv.watchlist_add, name='watchlist_add'),
